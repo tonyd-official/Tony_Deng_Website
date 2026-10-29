@@ -2297,6 +2297,8 @@ def render_message_dialog(form: dict, shared: dict) -> list[str]:
     strings = {k: form[k] for k in ("sending", "sent", "error", "needMessage", "needReply")}
     # a phone number gets no copy - only email can send one
     strings["sentPhone"] = form.get("sentPhone", form["sent"])
+    # and an email address gets none while the site cannot send mail
+    strings["sentNoCopy"] = form.get("sentNoCopy", form["sent"])
     return [
         "",
         '  <dialog class="msg" id="msgDialog" aria-labelledby="msgTitle">',

@@ -880,8 +880,8 @@ const UI_STRINGS = {
   'Site admin': '站点管理',
   'Who can sign in, your password, and messages': '登录账号、你的密码和留言',
   'Back to editing': '返回编辑',
-  'Separate sign-ins are not switched on yet: the site still has the one owner password. Someone with the Cloudflare dashboard needs to create the ACCOUNTS store - the steps are at the bottom of wrangler.toml.':
-    '多人登录还没有开启：网站目前仍只有一个所有者密码。需要有人在 Cloudflare 后台创建 ACCOUNTS 存储，步骤写在 wrangler.toml 底部。',
+  'Separate sign-ins are not available here: this copy of the admin has nowhere to keep them, which is how the local preview always is. The one owner password works as before.':
+    '这里无法使用多人登录：这个后台没有地方保存账号（本地预览一向如此）。所有者密码照常可用。',
   'Email is not set up yet, so nothing on this page can send mail: no password links, and messages from the site wait in the inbox below instead of arriving by email.':
     '还没有设置邮件发送，所以本页无法发送任何邮件：不会发密码链接，网站留言也只会保存在下方收件箱，不会发到邮箱。',
   'Your account': '你的账号',
@@ -924,7 +924,7 @@ const UI_STRINGS = {
   'Every “Message Tony” message is emailed here, with the sender as the reply address - press Reply in that mailbox and it goes straight back to them. Messages are also kept in the inbox on the Site admin page, which is where to answer someone who left a phone number. This saves at once; it is not part of Save draft.':
     '每条“给 Tony 留言”都会发到这个邮箱，回复地址是留言人——在邮箱里直接点“回复”就会发给对方。留言也会保存在“站点管理”页的收件箱里，留了手机号的人要在那里回复。这里一保存就生效，不需要“保存草稿”。',
   'Email is not set up yet, so for now messages only reach the inbox.': '还没有设置邮件发送，目前留言只会进收件箱。',
-  'Switched off until separate sign-ins are set up (the ACCOUNTS store in wrangler.toml).': '多人登录（wrangler.toml 中的 ACCOUNTS 存储）设置好之前，此功能关闭。',
+  'Not available here: this copy of the admin has nowhere to keep it (the local preview never does).': '这里无法使用：这个后台没有地方保存它（本地预览一向如此）。',
   'Save': '保存',
   'Saved': '已保存',
   'New messages go to {to}.': '新留言将发到 {to}。',
@@ -945,6 +945,7 @@ const UI_STRINGS = {
   'text': '短信',
   'Write a reply first': '请先写回复',
   'After sending (phone number)': '发送后（手机号）',
+  'After sending (no copy could be emailed)': '发送后（无法发送副本邮件）',
 };
 
 /* The admin's own language, kept in this browser rather than in the content:

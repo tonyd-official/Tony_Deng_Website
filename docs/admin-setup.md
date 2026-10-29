@@ -99,17 +99,12 @@ public.
 
 Changing `ADMIN_PASSWORD` later signs everyone out.
 
-## 3b. Separate sign-ins (the ACCOUNTS store)
+## 3b. Separate sign-ins
 
-Until this is done there is one password, `ADMIN_PASSWORD`. Afterwards each
-person has their own username and password, managed from **site admin** in
-the top-left corner of the admin.
-
-1. Cloudflare dashboard → **Storage & Databases** → **KV** → **Create**.
-   Call it `tony-admin`.
-2. Copy its **ID** into the `[[kv_namespaces]]` block at the bottom of
-   `wrangler.toml` and remove the `#`s. The ID is not secret.
-3. Push. The next deploy switches it on.
+Each person has their own username and password, managed from **site admin**
+in the top-left corner of the admin. They are kept in a Durable Object
+(`AdminStore`) that the deploy creates from `wrangler.toml`, so there is
+nothing to set up in the dashboard.
 
 The first account is **TonyDeng**, and its password is `ADMIN_PASSWORD`.
 TonyDeng can change it to something easy to remember from **site admin**,

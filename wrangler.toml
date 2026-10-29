@@ -47,11 +47,15 @@ DRAFT_BRANCH = "draft"
 # which is why the ones above live here. The repository is public, so no
 # token or password may ever be written into this file.
 
-# Sign-ins, the "where messages go" setting and the message inbox. Without
-# this binding the admin keeps the single ADMIN_PASSWORD and messages can
-# only be emailed. To switch it on: Cloudflare dashboard -> Storage &
-# Databases -> KV -> Create, name it tony-admin, then put its ID below and
-# remove the #s. The ID is not a secret.
-# [[kv_namespaces]]
-# binding = "ACCOUNTS"
-# id = ""
+# Sign-ins, the "where messages go" setting and the message inbox live in
+# one Durable Object (AdminStore in workers/admin/src/index.js). The deploy
+# creates it, so there is nothing to make in the dashboard and no ID to copy.
+# SQLite-backed, which is what the free plan allows. The migration tag is
+# history, not a setting: never edit or remove it, only add new ones below.
+[[durable_objects.bindings]]
+name = "ADMIN_STORE"
+class_name = "AdminStore"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["AdminStore"]

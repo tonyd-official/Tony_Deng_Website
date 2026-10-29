@@ -8,7 +8,7 @@
  * is impossible.
  *
  * Everyone signs in with their own username (or email) and password, kept
- * in the ACCOUNTS KV namespace, and is answered with a signed, HttpOnly
+ * in the admin store (AdminStore, below), and is answered with a signed, HttpOnly
  * session cookie - see "accounts" below. Everyone signed in can edit and
  * publish. Cloudflare Access would be stronger, but on workers.dev it would
  * lock the public site as well; it can come once the site has a domain.
@@ -26,7 +26,7 @@
  *   GITHUB_TOKEN    secret — fine-grained PAT, Contents: read & write
  *   ADMIN_PASSWORD  secret — the owner password: TonyDeng's way in, and what
  *                   removing TonyDeng asks for
- *   ACCOUNTS        KV namespace — sign-ins, settings, the message inbox
+ *   ADMIN_STORE     Durable Object — sign-ins, settings, the message inbox
  *   BREVO_API_KEY   secret — sends the emails (see "mail")
  *   MAIL_FROM       secret — the address they are sent from
  */
@@ -115,7 +115,7 @@ function sessionCookie(value, maxAge) {
 
 // ------------------------------------------------------------ accounts
 
-/* One sign-in per person, kept in the ACCOUNTS KV namespace (wrangler.toml).
+/* One sign-in per person, kept in the admin store (env.ACCOUNTS; see "store").
  *
  *   user:<login, lower case>   { login, email, salt, hash, mustChange, ver, created, owner? }
  *   email:<address>            <login key>, so people can sign in with either
@@ -128,8 +128,8 @@ function sessionCookie(value, maxAge) {
  * TonyDeng takes ADMIN_PASSWORD too, and leaves `{ deleted: true }` behind so
  * the account does not quietly come back.
  *
- * With no ACCOUNTS binding the admin falls back to the old single password,
- * signed in as TonyDeng, so a deploy before the namespace exists still works.
+ * With no store at all the admin falls back to the old single password,
+ * signed in as TonyDeng.
  *
  * `ver` goes up when a password changes and is carried in the session
  * cookie, so a new password signs that person out everywhere else. A
@@ -344,7 +344,7 @@ async function authenticate(request, env, path) {
 function needAccounts(env) {
   if (!env.ACCOUNTS) {
     throw new HttpError(501, 'Accounts are not switched on yet',
-      'The ACCOUNTS KV namespace is not bound to this Worker — see wrangler.toml.');
+      'This Worker has no ADMIN_STORE binding — see wrangler.toml.');
   }
 }
 
@@ -1080,7 +1080,9 @@ async function handleMessage(request, env, url) {
       ].join('\n'),
     });
   }
-  // their copy; best effort - the message itself has already arrived
+  // their copy; best effort - the message itself has already arrived. The
+  // page is told whether it went, so it never promises one that did not.
+  let copied = false;
   if (kind === 'email' && mailReady(env)) {
     try {
       await sendMail(env, {
@@ -1093,9 +1095,10 @@ async function handleMessage(request, env, url) {
           message,
         ].join('\n'),
       });
+      copied = true;
     } catch { /* the message went; only the copy did not */ }
   }
-  return json({ ok: true, kind });
+  return json({ ok: true, kind, copied });
 }
 
 async function handleMessages(env) {
@@ -1212,8 +1215,78 @@ async function routeMessage(request, env, url) {
   }
 }
 
+// ------------------------------------------------------------ store
+
+/* Where sign-ins, settings and messages are kept: one Durable Object,
+ * declared in wrangler.toml and created by the deploy itself. A KV
+ * namespace would need someone to make it in the Cloudflare dashboard and
+ * copy its ID here; nobody who works on the code has that dashboard.
+ *
+ * Everything above talks to `env.ACCOUNTS` with KV's calls - get, put with
+ * expirationTtl, delete, list by prefix - and `withStore` hands it this
+ * object behind those same calls. A real KV binding named ACCOUNTS, if one
+ * is ever added, is used instead. */
+export class AdminStore {
+  constructor(state) {
+    this.storage = state.storage;
+  }
+
+  async fetch(request) {
+    const { op, key, value, ttl, prefix = '', limit = 1000 } = await request.json();
+    const now = Date.now();
+    const live = (rec) => rec && (!rec.exp || rec.exp > now);
+
+    if (op === 'get') {
+      const rec = await this.storage.get(key);
+      if (rec && !live(rec)) await this.storage.delete(key);
+      return Response.json({ value: live(rec) ? rec.v : null });
+    }
+    if (op === 'put') {
+      await this.storage.put(key, { v: value, exp: ttl ? now + ttl * 1000 : 0 });
+      return Response.json({ ok: true });
+    }
+    if (op === 'delete') {
+      await this.storage.delete(key);
+      return Response.json({ ok: true });
+    }
+    if (op === 'list') {
+      const keys = [];
+      const gone = [];
+      for (const [name, rec] of await this.storage.list({ prefix })) {
+        if (live(rec)) keys.push({ name });
+        else gone.push(name);
+      }
+      if (gone.length) await this.storage.delete(gone);
+      return Response.json({ keys: keys.slice(0, limit), list_complete: keys.length <= limit });
+    }
+    return Response.json({ error: `Unknown store op ${op}` }, { status: 400 });
+  }
+}
+
+function withStore(env) {
+  if (env.ACCOUNTS || !env.ADMIN_STORE) return env;
+  const stub = env.ADMIN_STORE.get(env.ADMIN_STORE.idFromName('admin'));
+  const call = async (op, args) => {
+    const res = await stub.fetch('https://store/', { method: 'POST', body: JSON.stringify({ op, ...args }) });
+    return res.json();
+  };
+  const ACCOUNTS = {
+    async get(key, type) {
+      const { value } = await call('get', { key });
+      if (value === null || value === undefined) return null;
+      return type === 'json' ? JSON.parse(value) : value;
+    },
+    put: (key, value, opts = {}) => call('put', { key, value: String(value), ttl: opts.expirationTtl }),
+    delete: (key) => call('delete', { key }),
+    list: ({ prefix, limit } = {}) => call('list', { prefix, limit }),
+  };
+  // the rest of env is read through the prototype, untouched
+  return Object.create(env, { ACCOUNTS: { value: ACCOUNTS } });
+}
+
 export default {
-  async fetch(request, env) {
+  async fetch(request, rawEnv) {
+    const env = withStore(rawEnv);
     const url = new URL(request.url);
 
     if (url.pathname.startsWith('/reveal/')) return serveReveal(request, env, url);

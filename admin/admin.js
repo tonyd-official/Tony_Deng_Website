@@ -1843,6 +1843,7 @@ function renderContact() {
       bi('While sending', 'sending', form),
       bi('After sending', 'sent', form, { multiline: true, rows: 2 }),
       bi('After sending (phone number)', 'sentPhone', form, { multiline: true, rows: 2 }),
+      bi('After sending (no copy could be emailed)', 'sentNoCopy', form, { multiline: true, rows: 2 }),
       bi('If it fails', 'error', form, { multiline: true, rows: 2 }),
       bi('No message written', 'needMessage', form),
       bi('No email or phone', 'needReply', form),
@@ -4686,9 +4687,8 @@ async function showSiteAdmin(focus) {
     panel.replaceChildren(
       el('h2', { className: 'sitead__h' }, T('Site admin')),
       err.status === 501
-        ? intro(T('Separate sign-ins are not switched on yet: the site still has the one owner password. '
-            + 'Someone with the Cloudflare dashboard needs to create the ACCOUNTS store - the steps are '
-            + 'at the bottom of wrangler.toml.'))
+        ? intro(T('Separate sign-ins are not available here: this copy of the admin has nowhere to keep them, '
+            + 'which is how the local preview always is. The one owner password works as before.'))
         : intro(T(err.message) + (err.detail ? ' — ' + T(err.detail) : '')),
     );
     return;
@@ -4934,7 +4934,7 @@ function messageToCardAsync() {
   api('/settings').then((settings) => {
     if (!settings.accounts) {
       slot.replaceChildren(card('Where messages go', null, el('p', { className: 'hint' },
-        T('Switched off until separate sign-ins are set up (the ACCOUNTS store in wrangler.toml).'))));
+        T('Not available here: this copy of the admin has nowhere to keep it (the local preview never does).'))));
       return;
     }
     slot.replaceChildren(messageToCard(settings));

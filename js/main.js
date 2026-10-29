@@ -1000,7 +1000,9 @@ class MessageDialog {
       const body = await res.json().catch(() => ({}));
       if (!res.ok || !body.ok) throw new Error(body.error || res.status);
       this.form.classList.add('is-sent');
-      this.say((email ? this.T.sent : this.T.sentPhone || this.T.sent).replace('{to}', replyTo));
+      // "a copy is on its way" only when one is
+      const said = !email ? this.T.sentPhone : body.copied === false ? this.T.sentNoCopy : this.T.sent;
+      this.say((said || this.T.sent).replace('{to}', replyTo));
       this.dialog.querySelector('.msg__actions [data-msg-close]').focus();
     } catch {
       this.say(this.T.error.replace('{email}', this.form.dataset.email), true);
