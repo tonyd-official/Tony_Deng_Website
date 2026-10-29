@@ -1,6 +1,6 @@
 {
   "$comment": "Structure and media shared by both locales. Strings live in en.json / zh.json, keyed by the ids here. Order in these arrays is the order on the page.",
-  "contactEmail": "zhangmin9@hotmail.com",
+  "contactEmail": "immonazhang@gmail.com",
   "messageEndpoint": "/api/message",
   "copyrightYear": "2026",
   "images": {
