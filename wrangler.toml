@@ -1,18 +1,10 @@
-# Deploys the EFFECTS build as its own Workers static-assets project.
+# Deploys the official Tony D site as a Workers static-assets project.
 #
-# This repository is a copy of Tony_Deng_Website kept for trying visual work
-# out. It shares that repository's history and keeps it as the `upstream`
-# remote, so finished work can be moved across with git rather than by hand:
-#
-#   git fetch upstream && git log upstream/main    # what has changed live
-#   git cherry-pick <sha>                          # take one commit
-#
-# The Worker name below is what keeps the two apart. It is different from the
-# live site's, so a deploy from this repository cannot reach the real one.
-#
-# The Cloudflare build runs `python3 build.py --dist` first, which renders
-# index.html and zh/index.html from content/*.json and assembles dist/;
-# the deploy command `npx wrangler deploy` then uploads what this points at.
+# This repository, tonyd-official/Tony_Deng_Website, is the site. Every push
+# to `main` deploys it: .github/workflows/deploy.yml runs
+# `python build.py --dist`, which renders every page in both languages from
+# content/*.json and assembles dist/, then `wrangler deploy` uploads what
+# this file points at. There is no Cloudflare-side build.
 # dist/ is gitignored on purpose, so it only ever exists as build output.
 #
 # The admin API runs inside this same Worker. `main` is the admin script,
@@ -25,7 +17,7 @@
 # only be attached to a path on a custom domain, and this site is still on
 # workers.dev. Once there is a domain, it can move back behind Cloudflare
 # Access — see the note at the top of workers/admin/src/index.js.
-name = "tony-deng-website-effects"
+name = "tony-deng-website"
 main = "workers/admin/src/index.js"
 compatibility_date = "2026-08-01"
 
@@ -38,10 +30,9 @@ binding = "ASSETS"
 run_worker_first = ["/api/admin/*", "/api/message", "/audio/*", "/video/*", "/reveal/*"]
 
 [vars]
-# This copy of the admin must never write to the live repository - it is
-# pointed at the effects one, so saving from the effects admin edits the
-# experiment rather than the site that is actually published.
-GITHUB_REPO = "DarkStar-31/Tony_Deng_Website_Effects"
+# The repository the admin writes to. Save draft commits to DRAFT_BRANCH;
+# Publish merges it into LIVE_BRANCH, and that push to main deploys.
+GITHUB_REPO = "tonyd-official/Tony_Deng_Website"
 LIVE_BRANCH = "main"
 DRAFT_BRANCH = "draft"
 
@@ -53,8 +44,8 @@ DRAFT_BRANCH = "draft"
 #   BREVO_API_KEY   sends the admin's and the message form's emails
 #   MAIL_FROM       the sender address verified in Brevo
 # Secrets survive deploys; plain variables added in the dashboard do not,
-# which is why the ones above live here. Both repos are public, so the
-# password must never be written into this file.
+# which is why the ones above live here. The repository is public, so no
+# token or password may ever be written into this file.
 
 # Sign-ins, the "where messages go" setting and the message inbox. Without
 # this binding the admin keeps the single ADMIN_PASSWORD and messages can

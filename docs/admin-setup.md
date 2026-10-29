@@ -14,58 +14,67 @@ your edits to the repository for you:
 ```
 /admin  ──Save draft──▶  commit to the `draft` branch
         ──Publish─────▶  merge `draft` into `main`
-                          └─▶ Cloudflare sees the push, runs build.py, deploys
+                          └─▶ GitHub Actions sees the push, runs build.py, deploys
                                └─▶ public site updated (1–3 minutes)
 ```
 
 So three things have to be true for a change to reach the public page:
-the Worker must have its **two secrets**, Cloudflare must be **connected to
-the GitHub repository** so a push to `main` rebuilds it, and the Worker name
-in `wrangler.toml` must be the Worker you are looking at.
+the Worker must have its **secrets**, the repository must have the **deploy
+workflow and its two Cloudflare secrets**, and the Worker name in
+`wrangler.toml` must be the Worker you are looking at.
 
-| Copy | Repository | Worker / address |
-|---|---|---|
-| Live | `DarkStar-31/Tony_Deng_Website` | `tony-deng-website` → `tony-deng-website.jochen9999.workers.dev` |
-| Effects | `DarkStar-31/Tony_Deng_Website_Effects` | `tony-deng-website-effects` → `tony-deng-website-effects.jochen9999.workers.dev` |
+| | |
+|---|---|
+| Repository | `tonyd-official/Tony_Deng_Website` |
+| Worker | `tony-deng-website` |
+| Address | `tony-deng-website.jimmy98006.workers.dev` (a custom domain, tonydengmusic.com, is to follow) |
+| Deploys | `.github/workflows/deploy.yml`, on every push to `main` |
 
 ---
 
-## 1. Connect the Worker to GitHub (automatic builds)
+## 1. Deploys (GitHub Actions)
 
-Cloudflare dashboard → **Workers & Pages** → the Worker → **Settings** →
-**Build**:
+Cloudflare does not build anything. Every push to `main`, including each
+Publish from the admin, runs `.github/workflows/deploy.yml`, which runs
+`python build.py --dist` and then `wrangler deploy`. Saves to `draft` do not
+deploy. The workflow needs two repository secrets (GitHub → the repository →
+**Settings** → **Secrets and variables** → **Actions**):
 
-1. **Git repository** → **Connect** → pick the repository from the table
-   above. If GitHub asks, allow the Cloudflare app access to that repository.
-2. **Build configuration**
-   - Build command: `python3 build.py --dist`
-   - Deploy command: `npx wrangler deploy`
-   - Root directory: `/` (leave empty)
-3. **Branch control** → production branch: `main`. Turn *off* builds for
-   other branches. Otherwise every Save draft (which pushes to `draft`)
-   triggers a build too.
-4. Save, then **Deployments** → **Create deployment** (or push any commit)
-   and wait for the build to show **Success**.
+| Name | Value |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | a Cloudflare API token that can edit Workers on the account |
+| `CLOUDFLARE_ACCOUNT_ID` | the Cloudflare account ID |
+
+To deploy without a push: **Actions** → **Deploy to Cloudflare** → **Run
+workflow**. Every run, and its log if it fails, is under **Actions**.
 
 Check: open the workers.dev address. The site loads. Open `/admin/`. The
 sign-in box appears.
 
-> `npx wrangler deploy` deploys to the Worker named on the `name =` line of
-> `wrangler.toml`. That line is the only thing that keeps the effects copy off
-> the live site. If you connect a repository to a Worker with a different
-> name, the build will deploy somewhere you did not expect.
+> `wrangler deploy` deploys to the Worker named on the `name =` line of
+> `wrangler.toml`. If that line names a different Worker, the deploy goes
+> somewhere you did not expect.
+
+> Branch protection: blocking force-pushes and deletion on `main` is fine.
+> Do not protect `draft`, and do not require pull requests on `main`:
+> Publish merges `draft` into `main` directly and then moves `draft` to the
+> merge with a forced update, and either rule makes it fail.
 
 ## 2. Make a GitHub token
 
 github.com → your picture → **Settings** → **Developer settings** →
 **Personal access tokens** → **Fine-grained tokens** → **Generate new token**.
 
-- **Token name**: e.g. `tony-site-admin (live)`
+This is the token the **admin** commits with. It is a Worker secret (step 3),
+not the `GITHUB_TOKEN` that GitHub Actions makes for itself.
+
+- **Resource owner**: `tonyd-official`
+- **Token name**: e.g. `tony-site-admin`
 - **Expiration**: as long as you are comfortable with (up to a year). Put
   the date in your calendar. **When the token expires, saving stops
   working**, and the admin shows `GitHub 401` (see Troubleshooting).
-- **Repository access**: *Only select repositories* → just the one
-  repository for this Worker.
+- **Repository access**: *Only select repositories* →
+  `tonyd-official/Tony_Deng_Website` only.
 - **Permissions** → Repository permissions → **Contents: Read and write**.
   (Metadata: Read-only is added automatically.) Nothing else.
 
@@ -73,8 +82,7 @@ Generate it and copy it straight away, because GitHub shows it only once.
 
 ## 3. Add the two secrets to the Worker
 
-The Worker must have been deployed once (step 1) before the dashboard
-accepts secrets.
+The Worker must exist (deployed once) before the dashboard accepts secrets.
 
 Cloudflare dashboard → **Workers & Pages** → the Worker → **Settings** →
 **Variables and Secrets** → **Add**. Add each of these with type **Secret**
@@ -86,7 +94,7 @@ Cloudflare dashboard → **Workers & Pages** → the Worker → **Settings** →
 | `ADMIN_PASSWORD` | the owner password. Make it long. |
 
 Click **Deploy** when it asks. Secrets survive later deploys, so this is
-once only. Never write the password into a file. Both repositories are
+once only. Never write the password into a file. The repository is
 public.
 
 Changing `ADMIN_PASSWORD` later signs everyone out.
@@ -145,8 +153,8 @@ Do this once after setup, and again whenever something seems wrong.
    (or Ctrl+S / ⌘S). A green "Saved to the draft branch" message appears,
    and the bar shows **1 change waiting to publish**.
 5. Press **Publish** → OK. A green "Published" message appears.
-6. Cloudflare dashboard → the Worker → **Deployments**. A new build starts
-   within a few seconds. Wait for **Success** (usually 1–3 minutes).
+6. GitHub → the repository → **Actions**. A new **Deploy to Cloudflare** run
+   starts within a few seconds. Wait for the green ✓ (usually 1–3 minutes).
 7. Open the public page in a new tab (or hard-refresh with Ctrl+F5) and see
    the change.
 
@@ -165,14 +173,15 @@ in the form. So it waits until:
 
 | What you see | Cause and fix |
 |---|---|
-| Clicking a text box does nothing / typing goes nowhere | Fixed in October 2026. Each rich text field was wrapped in a `<label>`, so a click moved focus to its **B** button. If you still see it, the Worker is serving an old build. Check Deployments. |
-| `Wrong password` | Wrong password, or `ADMIN_PASSWORD` is not set on *this* Worker. |
-| `The ADMIN_PASSWORD secret is not set` (or GITHUB_TOKEN) | Step 3 was skipped, or done on the other Worker. |
+| Clicking a text box does nothing / typing goes nowhere | Fixed in October 2026. Each rich text field was wrapped in a `<label>`, so a click moved focus to its **B** button. If you still see it, the Worker is serving an old build. Check **Actions**. |
+| `Wrong username or password` | Just that, or `ADMIN_PASSWORD` is not set on *this* Worker. |
+| `The ADMIN_PASSWORD secret is not set` (or GITHUB_TOKEN) | Step 3 was skipped, or done on a Worker other than `tony-deng-website`. |
 | `GitHub 401 on …` | The token expired or was revoked. Make a new one (step 2) and replace the `GITHUB_TOKEN` secret (step 3). |
 | `GitHub 403 on …` or `GitHub 404`-style "not found" | The token cannot see this repository, or lacks *Contents: Read and write*. Edit the token's repository access and permissions. |
 | `Someone else saved while you were editing` | Someone else saved first (or another tab did). Press **Reload**, make your change again, and save. Nothing they saved is lost. |
 | `Merge conflict between draft and live` | Someone changed `main` directly in a way that conflicts. This needs someone with git. |
-| Published, but the public page has not changed | The build did not start or it failed. Open Deployments, then **Retry** a failed build. If no build appeared, step 1 (Git connection, production branch `main`) is not set up. Then hard-refresh the page. |
+| Published, but the public page has not changed | The deploy did not start or it failed. Open **Actions**: re-run a failed run, or **Run workflow** if none appeared. A red run whose log mentions authentication means the `CLOUDFLARE_*` repository secrets (step 1) are wrong. Then hard-refresh the page. |
+| Publish fails with a GitHub error that mentions a protected branch, or says "Merge conflict" when nobody touched `main` | Branch protection on `draft`, or a pull-request rule on `main`, blocks the admin. See the note in step 1. |
 | `Not signed in` after a while | The session lasts 7 days, or ends sooner if the password was changed. Sign in again. Unsaved edits stay on the page if you sign in from a **new tab**. |
 
 ## Trying it without deploying anything
