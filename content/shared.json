@@ -270,7 +270,17 @@
         "portrait"
       ],
       "ar": 0.6667,
-      "ratio": "orig"
+      "ratio": "orig",
+      "album": [
+        {
+          "id": "a1",
+          "src": "img/photos/tony_0294-2.webp"
+        },
+        {
+          "id": "a2",
+          "src": "img/photos/tony_0239-2.webp"
+        }
+      ]
     },
     {
       "id": "photo-07",
@@ -341,6 +351,63 @@
       "ar": 0.6667,
       "ratio": "orig",
       "tags": []
+    },
+    {
+      "id": "photo-2",
+      "src": "img/photos/tony_0389-2.webp",
+      "ar": 0.6667,
+      "ratio": "orig",
+      "tags": [],
+      "album": [
+        {
+          "id": "a1",
+          "src": "img/photos/tony_0394-2.webp"
+        },
+        {
+          "id": "a2",
+          "src": "img/photos/tony_0398-2.webp"
+        }
+      ]
+    },
+    {
+      "id": "photo-3",
+      "src": "img/photos/tony_0153-2.webp",
+      "ar": 0.6667,
+      "ratio": "orig",
+      "tags": []
+    },
+    {
+      "id": "photo-4",
+      "src": "img/photos/tony_0025-2.webp",
+      "ar": 0.6667,
+      "ratio": "orig",
+      "tags": []
+    },
+    {
+      "id": "photo-5",
+      "src": "img/photos/tony_0306-2.webp",
+      "ar": 0.6667,
+      "ratio": "orig",
+      "tags": [],
+      "album": [
+        {
+          "id": "a1",
+          "src": "img/photos/tony_0364-3.webp"
+        }
+      ]
+    },
+    {
+      "id": "photo-6",
+      "src": "img/photos/tony_0341-2.webp",
+      "ar": 0.6667,
+      "ratio": "orig",
+      "tags": [],
+      "album": [
+        {
+          "id": "a1",
+          "src": "img/photos/tony_0360-2.webp"
+        }
+      ]
     }
   ],
   "milestones": [
@@ -438,6 +505,12 @@
   ],
   "visualsRows": [
     [
+      "photo:photo-3",
+      "photo:photo-4",
+      "photo:photo-5",
+      "photo:photo-6"
+    ],
+    [
       "video:look-in-the-mirror",
       "video:her",
       "video:i-do"
@@ -466,9 +539,10 @@
       "video:how-it-feels-like"
     ],
     [
-      "photo:photo-14",
+      "photo:photo-2",
       "photo:photo-15",
-      "photo:photo"
+      "photo:photo",
+      "photo:photo-14"
     ],
     [
       "video:oh-mother",
