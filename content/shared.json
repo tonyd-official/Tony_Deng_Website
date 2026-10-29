@@ -1,8 +1,8 @@
 {
   "$comment": "Structure and media shared by both locales. Strings live in en.json / zh.json, keyed by the ids here. Order in these arrays is the order on the page.",
-  "contactEmail": "zhangmin9@hotmail.com",
+  "contactEmail": "wenxiuxie289@gmail.com",
   "messageEndpoint": "/api/message",
-  "copyrightYear": "2025",
+  "copyrightYear": "2026",
   "images": {
     "hero": "img/hero-portrait.webp",
     "ink": "img/ink-overthinking.webp",
